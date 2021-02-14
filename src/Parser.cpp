@@ -1,10 +1,21 @@
 #include "Parser.h"
 #include <ctype.h>
 #include <iostream>
+#include <string>
 
 Parser::Parser(string input)
     : m_input(input)
 {
+}
+
+bool Parser::tag_is_opening()
+{
+    return peek() == '<' && peek(1) != '/';
+}
+
+bool Parser::tag_is_closing()
+{
+    return (peek() == '<' && peek(1) == '/') || (peek() == '/' && peek(1) == '>');
 }
 
 char Parser::peek(size_t offset)
@@ -56,6 +67,16 @@ string Parser::parse_value()
     return value;
 }
 
+string Parser::parse_content()
+{
+    string value = "";
+    consume_whitespace();
+    while (peek() != '<') {
+        value += consume();
+    }
+    return value;
+}
+
 Attribute* Parser::parse_attribute()
 {
     string attr_name = "";
@@ -82,14 +103,8 @@ vector<Tag*> Parser::parse_tag()
     Tag* tag = nullptr;
     string tag_name = "";
 
-    auto tag_is_closing = [&]() -> bool {
-        return (peek() == '<' && peek(1) == '/');
-    };
-
     consume_whitespace();
-    while (peek() == '<') {
-        if (tag_is_closing())
-            return tags;
+    while (tag_is_opening()) {
         consume();
         consume_whitespace();
 
@@ -128,10 +143,15 @@ vector<Tag*> Parser::parse_tag()
         consume_whitespace();
         if (tag_is_closing()) {
             consume_close_tag();
+            consume_whitespace();
         } else {
-            auto children = parse_tag();
-            if (!children.empty())
+            if (tag_is_opening()) {
+                auto children = parse_tag();
                 tag->add_children(children);
+            } else {
+                string content = parse_content();
+                tag->set_content(content);
+            }
 
             consume_close_tag();
         }

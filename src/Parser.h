@@ -10,7 +10,7 @@ public:
     Parser(string input);
     void run();
 
-    vector<Tag*> get_tags()
+    vector<Tag*>& get_tags()
     {
         return m_tags;
     }
@@ -24,6 +24,10 @@ public:
     Attribute* parse_attribute();
     string parse_name();
     string parse_value();
+    string parse_content();
+
+    bool tag_is_opening();
+    bool tag_is_closing();
 
 private:
     size_t m_index { 0 };

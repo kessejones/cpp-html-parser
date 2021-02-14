@@ -8,7 +8,7 @@ using namespace std;
 static void print_indent(int value)
 {
     for (int i = 0; i < value * 4; ++i) {
-        printf(" ");
+        putchar(' ');
     }
 }
 
@@ -17,6 +17,10 @@ static void dump_tag(vector<Tag*> tags, int indent = 0)
     for (auto* tag : tags) {
         print_indent(indent);
         cout << "=> " << tag->get_name() << endl;
+        if (tag->has_content()) {
+            print_indent(indent);
+            cout << " * " << tag->get_content() << endl;
+        }
         for (auto* attr : tag->get_attributes()) {
             print_indent(indent);
             cout << "  # " << attr->get_name() << " = " << attr->get_value() << endl;
@@ -30,9 +34,12 @@ int main(int, char**)
 {
     string input = R"(
         <html>
+        <head>
+            <title>TEST</title>
+        </head>
         <body>
-            <div>
-            </div>
+            <header>
+            </header>
             <main style="color: red" width="300px">
                 <img src="x.png" />
                 <img src="x.png" />
@@ -40,8 +47,7 @@ int main(int, char**)
                 <img src="x.png" />
                 <input type="text" name="username"/>
             </main>
-            <footer>
-            </footer>
+            <footer class="footer-class">Hello World</footer>
         </body>
         </html>
     )";
@@ -49,7 +55,7 @@ int main(int, char**)
     Parser parser(input);
     parser.run();
 
-    auto tags = parser.get_tags();
+    auto& tags = parser.get_tags();
     dump_tag(tags);
 
     return 0;

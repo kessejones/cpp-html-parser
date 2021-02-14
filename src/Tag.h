@@ -68,8 +68,23 @@ public:
         return m_attributes;
     }
 
+    string get_content()
+    {
+        return m_content;
+    }
+
+    void set_content(string content)
+    {
+        m_content = content;
+        m_has_content = content.length() > 0;
+    }
+
+    bool has_content() const { return m_has_content; }
+
 private:
     string m_name;
+    string m_content;
     vector<Tag*> m_children;
     vector<Attribute*> m_attributes;
+    bool m_has_content { false };
 };
