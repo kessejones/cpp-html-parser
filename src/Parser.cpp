@@ -57,10 +57,10 @@ string Parser::parse_name()
 string Parser::parse_value()
 {
     string value = "";
-    if (peek() == '"')
-        consume();
+    assert(peek() == '"');
+    consume();
 
-    while (peek() != '"' && peek() != '>') {
+    while (peek() != '"') {
         value += consume();
     }
     consume();
