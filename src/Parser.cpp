@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <ctype.h>
 #include <iostream>
 
 Parser::Parser(string input)
@@ -13,29 +14,32 @@ char Parser::peek(size_t offset)
     return m_input.at(m_index + offset);
 }
 
-char Parser::consume(size_t size)
+char Parser::consume()
 {
-    if (m_index + size >= m_input.length())
+    if (m_index >= m_input.length())
         return '\0';
-    size_t old_index = m_index;
-    m_index += size;
-    return m_input.at(old_index);
+    return m_input.at(m_index++);
+}
+
+void Parser::consume(size_t size)
+{
+    for (size_t i = 0; i < size; ++i)
+        consume();
 }
 
 void Parser::consume_whitespace()
 {
-    while (peek() == ' ')
+    while (isspace(peek())) {
         consume();
+    }
 }
 
 string Parser::parse_name()
 {
     string name = "";
-
-    while (peek() != ' ' && peek() != '=') {
+    while (peek() != ' ' && peek() != '=' && peek() != '>' && peek() != '/') {
         name += consume();
     }
-
     return name;
 }
 
@@ -57,6 +61,9 @@ Attribute* Parser::parse_attribute()
     string attr_name = "";
     string attr_value = "";
     consume_whitespace();
+    if (peek() == '/' || peek() == '>')
+        return nullptr;
+
     attr_name = parse_name();
     consume_whitespace();
 
@@ -69,58 +76,77 @@ Attribute* Parser::parse_attribute()
     return new Attribute(attr_name, attr_value);
 }
 
-Tag* Parser::parse_tag()
+vector<Tag*> Parser::parse_tag()
 {
+    vector<Tag*> tags;
     Tag* tag = nullptr;
     string tag_name = "";
-    consume_whitespace();
-    if (peek() != '<')
-        return nullptr;
-    consume();
 
-    tag_name = parse_name();
-    tag = new Tag(tag_name);
-
-    while (peek() != '>' && peek() != '/') {
-        auto* attribute = parse_attribute();
-        tag->add_attribute(attribute);
-    }
-    consume_whitespace();
-    if (peek() == '/' && peek(1) == '>') {
-        consume(2);
-        return tag;
-    }
-
-    auto consume_close_tag = [&]() {
-        consume_whitespace();
-        consume(tag_name.length());
-        consume();
+    auto tag_is_closing = [&]() -> bool {
+        return (peek() == '<' && peek(1) == '/');
     };
 
     consume_whitespace();
-    if (peek() == '>') {
+    while (peek() == '<') {
+        if (tag_is_closing())
+            return tags;
         consume();
-    }
-    if (peek() == '<' && peek(1) == '/') {
-        consume_close_tag();
-    } else {
-        auto* children = parse_tag();
-        if (children)
-            tag->set_children(children);
-        consume_close_tag();
+        consume_whitespace();
+
+        tag_name = parse_name();
+        tag = new Tag(tag_name);
+
+        consume_whitespace();
+        while (peek() != '>' && peek() != '/') {
+            auto* attribute = parse_attribute();
+            if (attribute)
+                tag->add_attribute(attribute);
+        }
+        consume_whitespace();
+        if (peek() == '/' && peek(1) == '>') {
+            consume(2);
+            consume_whitespace();
+            tags.push_back(tag);
+            continue;
+        }
+
+        auto consume_close_tag = [&]() {
+            consume_whitespace();
+            consume(2);
+            consume(tag_name.length());
+            consume();
+            consume_whitespace();
+
+            tags.push_back(tag);
+        };
+
+        consume_whitespace();
+        if (peek() == '>') {
+            consume();
+        }
+
+        consume_whitespace();
+        if (tag_is_closing()) {
+            consume_close_tag();
+        } else {
+            auto children = parse_tag();
+            if (!children.empty())
+                tag->add_children(children);
+
+            consume_close_tag();
+        }
     }
 
-    return tag;
+    return tags;
 }
 
 void Parser::run()
 {
-    while (true) {
-        if (peek() == '\0')
+    while (peek() != '\0') {
+        vector<Tag*> tags = parse_tag();
+        if (tags.empty())
             break;
-        Tag* tag = parse_tag();
-        if (!tag)
-            break;
-        m_tags.push_back(tag);
+        for (auto* tag : tags)
+            m_tags.push_back(tag);
     }
 }

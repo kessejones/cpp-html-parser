@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 #include <string>
 #include <vector>
 
@@ -39,18 +40,26 @@ public:
         return m_name;
     }
 
-    Tag* get_children()
+    vector<Tag*>& get_children()
     {
         return m_children;
     }
 
-    void set_children(Tag* tag)
+    void add_children(Tag* children)
     {
-        m_children = tag;
+        assert(children != nullptr);
+        m_children.push_back(children);
+    }
+
+    void add_children(vector<Tag*> children)
+    {
+        for (auto* c : children)
+            m_children.push_back(c);
     }
 
     void add_attribute(Attribute* attr)
     {
+        assert(attr != nullptr);
         m_attributes.push_back(attr);
     }
 
@@ -61,6 +70,6 @@ public:
 
 private:
     string m_name;
-    Tag* m_children;
+    vector<Tag*> m_children;
     vector<Attribute*> m_attributes;
 };

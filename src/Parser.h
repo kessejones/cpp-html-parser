@@ -16,10 +16,11 @@ public:
     }
 
     char peek(size_t offset = 0);
-    char consume(size_t size = 1);
+    char consume();
+    void consume(size_t size);
     void consume_whitespace();
 
-    Tag* parse_tag();
+    vector<Tag*> parse_tag();
     Attribute* parse_attribute();
     string parse_name();
     string parse_value();
